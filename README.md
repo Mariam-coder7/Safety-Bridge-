@@ -17,7 +17,7 @@ enhance resilience, and protect both infrastructure and commuters.
 - Battery source 
 - Water level Sensor 
 - Vibration detection sensors
-- 16x2 LCD
+- 16x2 LCD I2C
 - Breadboard
 - Jumper Wires
 - 2 Servos
@@ -45,7 +45,11 @@ enhance resilience, and protect both infrastructure and commuters.
 
 ##  References
 - [Arduino Docs](https://docs.arduino.cc/)
-- Wokwi Documentation
+- https://wokwi.com/projects/440471505208796161
+- Wokwi Documentation :https://docs.wokwi.com/guides/esp32
 - LiquidCrystal I2C
 - ESp32 Servo
 - PubSubClient
+- HiveMQ Documentation: 
+- SubaBase Documentation
+- Flutter Documentation : https://docs.flutter.dev/
