@@ -262,7 +262,7 @@ void sendSensorDataToSupabase() {
         DynamicJsonDocument doc(1024);
         doc["vibration_level"] = vibrationLevel;
         doc["max_vibration"] = maxVibration;
-        doc["water_level"] = analogRead(watersensorPin);
+        doc["water_level"] = waterLevel;
         doc["system_state"] = getStateString(currentState);
         doc["alert_message"] = getCurrentAlertMessage();
         
@@ -414,7 +414,6 @@ void publishSensorData() {
     client.publish(topic_vibration, String(vibrationLevel).c_str());
     
     // Publish water level
-    int waterLevel = analogRead(watersensorPin);
     client.publish(topic_water, String(waterLevel).c_str());
     
     // Publish alerts based on current state
