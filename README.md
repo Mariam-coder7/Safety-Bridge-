@@ -1,55 +1,16 @@
-# Safety Bridge
+# bridge_app
 
-Bridges in low-lying or unstable regions are highly vulnerable to flooding and seismic activity.
-Sudden rises in water levels or unexpected shocks can pose serious risks to both traffic and structural safety. 
-Many current monitoring systems lack affordable, automated local alerts and flexible manual override options. 
-This project introduces a low-cost, safety-focused bridge monitoring solution designed to provide early warnings,
-enhance resilience, and protect both infrastructure and commuters.
+A new Flutter project.
 
+## Getting Started
 
----
+This project is a starting point for a Flutter application.
 
-##  Components Required
-- ESP32
-- Red LED
-- Buzzer
-- Resistors
-- Battery source 
-- Water level Sensor 
-- Vibration detection sensors
-- 16x2 LCD I2C
-- Breadboard
-- Jumper Wires
-- 2 Servos
-- Wooden Bridge Maquette
+A few resources to get you started if this is your first Flutter project:
 
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-
-
-
-## Project Files
-- `project.ino` → main Arduino sketch
-- `README.md` → documentation (this file)
-- Presentation 
-- Wokwi simulation
-
----
-
-##  How to Run
-1. Open the `.ino` file in **Arduino IDE**.
-2. Connect your Arduino board to your computer.
-3. Select the correct **board** and **port** in Arduino IDE.
-4. Click **Upload**.
-
----
-
-##  References
-- [Arduino Docs](https://docs.arduino.cc/)
-- https://wokwi.com/projects/440471505208796161
-- Wokwi Documentation :https://docs.wokwi.com/guides/esp32
-- LiquidCrystal I2C
-- ESp32 Servo
-- PubSubClient
-- HiveMQ Documentation: 
-- SubaBase Documentation
-- Flutter Documentation : https://docs.flutter.dev/
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
