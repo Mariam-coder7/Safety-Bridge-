@@ -6,7 +6,10 @@
 
 #define LEDpin 14
 #define buzzerPin 27
-#define watersensorPin 25          // water level sensor
+#define water_powerPin  17 // ESP32 pin GPIO17 (TX2) connected to sensor's VCC pin
+#define water_signalPin 36 // ESP32 pin GPIO36 (ADC0) (VP) connected to sensor's signal pin
+#define water_min 0
+#define water_max 521
 #define vibrationsensorPin 34      // SW1801P vibration sensor (analog)
 #define servo1Pin 32               // gate 1
 #define servo2Pin 33               // gate 2
@@ -15,9 +18,14 @@ LiquidCrystal_I2C LCD(0x27, 16, 2);  // LCD object
 Servo servo1;  // servo object for gate 1
 Servo servo2;  // servo object for gate 2
 
+int waterValue = 0; // variable to store the sensor value
+int waterLevel = 0; // variable to store the water level
+int waterThreshold = 1000; // variable to store the water threshold for us to consider it a flood
+
+
 // --- Wi-Fi credentials ---
-const char* ssid = "TEData_928DDB";
-const char* password = "h9f09533";
+const char* ssid = "V~";
+const char* password = "iloveyou";
 
 // --- HiveMQ broker settings ---
 const char* mqtt_server = "594cdc23084646ca970a765372b3bd99.s1.eu.hivemq.cloud"; 
@@ -38,6 +46,13 @@ const char* topic_gate2_cmd = "bridge/gates/gate2/cmd";
 WiFiClientSecure secureClient;
 PubSubClient client(secureClient);
 String gateStatus;
+
+// --- Supabase Configuration ---
+const char* supabase_url = "https://fvlptjzaleesanbusaoi.supabase.co";  // Replace with your URL
+const char* supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2bHB0anphbGVlc2FuYnVzYW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NzM0MzQsImV4cCI6MjA3MjA0OTQzNH0.d3XDPnlOiiDnr3v2IHiy5QBpKKauKP5HNcRVWmjyKtw";      // Replace with your API key
+
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 // =============================================================================
 // SW1801P VIBRATION SENSOR VARIABLES (Enhanced Integration)
@@ -99,7 +114,8 @@ void setup() {
   // Initialize pins
   pinMode(LEDpin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  pinMode(watersensorPin, INPUT);
+  pinMode(water_powerPin, OUTPUT);   // configure D7 pin as an OUTPUT
+  digitalWrite(water_powerPin, LOW); // turn the sensor OFF
   pinMode(vibrationsensorPin, INPUT);
   
   // Initialize servos and LCD
@@ -154,8 +170,16 @@ void loop() {
     return; // Stay in calibration mode
   }
 
-  // Read water sensor
-  int waterLevel = analogRead(watersensorPin);
+  // water sensor loop code
+  digitalWrite(water_powerPin, HIGH);  // turn the sensor ON
+  delay(10);                      // wait 10 milliseconds
+  waterLevel = analogRead(water_signalPin); // read the analog value from sensor
+  digitalWrite(water_powerPin, LOW);   // turn the sensor OFF
+
+  Serial.print("Water level: ");
+  Serial.println(waterLevel);
+
+  delay(1000);
   
   // Determine system state based on sensors
   SystemState newState = NORMAL;
@@ -224,6 +248,108 @@ void loop() {
   }
 
   delay(10);
+}
+// supabase function
+void sendSensorDataToSupabase() {
+    if (WiFi.status() == WL_CONNECTED && vibrationCalibrated) {
+        HTTPClient http;
+        http.begin(String(supabase_url) + "/rest/v1/sensor_readings");
+        http.addHeader("Content-Type", "application/json");
+        http.addHeader("apikey", supabase_key);
+        http.addHeader("Authorization", "Bearer " + String(supabase_key));
+        
+        // Create JSON payload
+        DynamicJsonDocument doc(1024);
+        doc["vibration_level"] = vibrationLevel;
+        doc["max_vibration"] = maxVibration;
+        doc["water_level"] = analogRead(watersensorPin);
+        doc["system_state"] = getStateString(currentState);
+        doc["alert_message"] = getCurrentAlertMessage();
+        
+        String jsonString;
+        serializeJson(doc, jsonString);
+        
+        int httpResponseCode = http.POST(jsonString);
+        
+        if (httpResponseCode > 0) {
+            Serial.print("Supabase response: ");
+            Serial.println(httpResponseCode);
+        } else {
+            Serial.print("Supabase error: ");
+            Serial.println(httpResponseCode);
+        }
+        
+        http.end();
+    }
+}
+
+void sendGateOperationToSupabase(int gateNumber, String action, String status, String reason) {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(String(supabase_url) + "/rest/v1/gate_operations");
+        http.addHeader("Content-Type", "application/json");
+        http.addHeader("apikey", supabase_key);
+        http.addHeader("Authorization", "Bearer " + String(supabase_key));
+        
+        DynamicJsonDocument doc(512);
+        doc["gate_number"] = gateNumber;
+        doc["action"] = action;
+        doc["status"] = status;
+        doc["trigger_reason"] = reason;
+        
+        String jsonString;
+        serializeJson(doc, jsonString);
+        
+        http.POST(jsonString);
+        http.end();
+    }
+}
+
+void sendAlertToSupabase(String alertType, String severity, String message) {
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(String(supabase_url) + "/rest/v1/system_alerts");
+        http.addHeader("Content-Type", "application/json");
+        http.addHeader("apikey", supabase_key);
+        http.addHeader("Authorization", "Bearer " + String(supabase_key));
+        
+        DynamicJsonDocument doc(512);
+        doc["alert_type"] = alertType;
+        doc["severity"] = severity;
+        doc["message"] = message;
+        
+        String jsonString;
+        serializeJson(doc, jsonString);
+        
+        http.POST(jsonString);
+        http.end();
+    }
+}
+
+String getStateString(SystemState state) {
+    switch (state) {
+        case NORMAL: return "NORMAL";
+        case MINOR_VIBRATION: return "MINOR_VIBRATION";
+        case MAJOR_VIBRATION: return "MAJOR_VIBRATION";
+        case EARTHQUAKE: return "EARTHQUAKE";
+        case FLOOD: return "FLOOD";
+        case MANUAL_OVERRIDE: return "MANUAL_OVERRIDE";
+        case CALIBRATING: return "CALIBRATING";
+        default: return "UNKNOWN";
+    }
+}
+
+String getCurrentAlertMessage() {
+    switch (currentState) {
+        case NORMAL: return "Bridge Safe";
+        case MINOR_VIBRATION: return "Minor Vibration Detected";
+        case MAJOR_VIBRATION: return "Major Vibration - Caution!";
+        case EARTHQUAKE: return "EARTHQUAKE DETECTED! EVACUATE!";
+        case FLOOD: return "FLOOD DETECTED! EVACUATE!";
+        case MANUAL_OVERRIDE: return "Manual Override Active";
+        case CALIBRATING: return "System Calibrating";
+        default: return "Unknown State";
+    }
 }
 
 // =============================================================================
@@ -314,6 +440,17 @@ void publishSensorData() {
         break;
     }
     client.publish(topic_alerts, alertMessage.c_str());
+      // Also send to Supabase every 3 seconds to avoid too many requests
+        static unsigned long lastSupabaseUpdate = 0;
+        if (millis() - lastSupabaseUpdate >= 3000) {
+            sendSensorDataToSupabase();
+            lastSupabaseUpdate = millis();
+        }
+
+
+
+
+
   }
 }
 
@@ -326,11 +463,6 @@ void updateLCD() {
   switch (currentState) {
     case NORMAL:
       LCD.print("Bridge Safe");
-      LCD.setCursor(0, 1);
-      LCD.print("Vib:");
-      LCD.print(vibrationLevel);
-      LCD.print(" Max:");
-      LCD.print(maxVibration);
       break;
       
     case MINOR_VIBRATION:
@@ -350,18 +482,21 @@ void updateLCD() {
       LCD.print("!! EARTHQUAKE !!");
       LCD.setCursor(0, 1);
       LCD.print("EVACUATE NOW!");
+      delay(500);
       break;
       
     case FLOOD:
       LCD.print("!! FLOOD !!");
       LCD.setCursor(0, 1);
       LCD.print("EVACUATE NOW!");
+      delay(500);
       break;
       
     case MANUAL_OVERRIDE:
       LCD.print("Manual Override");
       LCD.setCursor(0, 1);
       LCD.print("Active");
+      delay(500);
       break;
   }
 }
@@ -424,6 +559,15 @@ void earthquake_warning() {
     digitalWrite(buzzerPin, pulseState);
     lastPulse = millis();
   }
+
+     //send to supabase 
+   static bool alertSent = false;
+    if (!alertSent) {
+        sendAlertToSupabase("EARTHQUAKE", "CRITICAL", "Earthquake detected - bridge evacuation required");
+        sendGateOperationToSupabase(1, "CLOSE", "closed", "earthquake_detection");
+        sendGateOperationToSupabase(2, "OPEN", "open", "earthquake_evacuation");
+        alertSent = true;
+    }
 }
 
 void flood_warning() {
@@ -432,6 +576,15 @@ void flood_warning() {
   servo2.write(90);  // exit open
   digitalWrite(LEDpin, HIGH);
   digitalWrite(buzzerPin, HIGH);
+
+    //send to supabase
+   static bool alertSent = false;
+    if (!alertSent) {
+        sendAlertToSupabase("FLOOD", "CRITICAL", "Flood detected - bridge closure required");
+        sendGateOperationToSupabase(1, "CLOSE", "closed", "flood_detection");
+        sendGateOperationToSupabase(2, "OPEN", "open", "flood_evacuation");
+        alertSent = true;
+    }
 }
 
 void manual_override() {
