@@ -61,7 +61,7 @@ Water Level  Data      LED/Buzzer     MQTT Broker
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/smart-bridge-monitoring.git
+   git clone https://github.com/yourusername/smart-bridge-monitoring](https://github.com/Mariam-coder7/Safety-.git
    cd smart-bridge-monitoring
    ```
 
@@ -88,18 +88,14 @@ Water Level  Data      LED/Buzzer     MQTT Broker
    const char* mqtt_pass = "YOUR_MQTT_PASS";
    
    // Supabase Settings
-   const char* supabase_url = "YOUR_SUPABASE_URL";
-   const char* supabase_key = "YOUR_SUPABASE_ANON_KEY";
+   const char* supabase_url = "https://fvlptjzaleesanbusaoi.supabase.co";
+   const char* supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2bHB0anphbGVlc2FuYnVzYW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NzM0MzQsImV4cCI6MjA3MjA0OTQzNH0.d3XDPnlOiiDnr3v2IHiy5QBpKKauKP5HNcRVWmjyKtw";
    ```
 
 4. **Upload to ESP32:**
    - Connect ESP32 via USB
    - Select board and port in Arduino IDE
    - Upload the sketch
-
-##  Database Schema
-
-### Supabase Tables
 
 #### `sensor_readings`
 ```sql
@@ -277,7 +273,7 @@ ORDER BY timestamp DESC;
 : [your-email@example.com]
 
 ##  Acknowledgments
-
+ 
 - ESP32 community for excellent documentation
 - Supabase team for robust backend services
 - Arduino ecosystem for simplified IoT development
@@ -286,3 +282,4 @@ ORDER BY timestamp DESC;
 ---
 
 **⚠️ Safety Notice:** This system is designed for monitoring and alerting purposes. Always follow local safety regulations and have professional structural engineers assess bridge safety concerns.
+
